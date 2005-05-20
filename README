@@ -1,0 +1,12 @@
+ADB HID caps lock hack
+
+This patch will add a kernel option (CONFIG_ADBHID_CAPSLOCK) to make caps lock
+act (mostly) as a regular caps lock instead of as a brain-dead ADB caps lock. I
+got the 2.4 patch from [1], which is by Gregorio Gervas,  and adapted it for
+the 2.6 kernel. The 2.6 patch has been tested in 2.6.11.10, but will probably
+apply cleanly to previous (and later) 2.6 kernels as well.
+
+1. http://lists.debian.org/debian-powerpc/2002/02/msg00305.html
+
+-- 
+Hans Fugal <hans@fugal.net>
