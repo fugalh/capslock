@@ -1,0 +1,63 @@
+diff -upr -X dontdiff linux-2.6.11.10/drivers/macintosh/adbhid.c linux-2.6.11.10-caps/drivers/macintosh/adbhid.c
+--- linux-2.6.11.10/drivers/macintosh/adbhid.c	2005-05-16 11:50:32.000000000 -0600
++++ linux-2.6.11.10-caps/drivers/macintosh/adbhid.c	2005-05-19 22:07:33.000000000 -0600
+@@ -286,16 +286,41 @@ adbhid_input_keycode(int id, int keycode
+ 	struct adbhid *ahid = adbhid[id];
+ 	int up_flag;
+ 
++#ifdef CONFIG_ADBHID_CAPSLOCK
++	static int caps_lock_down = 0;
++	/* HACK to fix caps-lock on Powerbook(?) and iBook keyboards */
++	switch (keycode) {
++	case ADB_KEY_CAPSLOCK:
++		caps_lock_down = 1;
++		break;
++	case 0xff:
++		if (caps_lock_down) {
++			/* caps lock is down, must be
++			 * caps lock being released
++			 */
++			caps_lock_down = 0;
++			keycode = 0x80 | ADB_KEY_CAPSLOCK;
++		} else {
++			/* must be caps lock being pressed 
++			 */ 
++			keycode = ADB_KEY_CAPSLOCK;
++		}
++		break;
++	}
++#endif /* CONFIG_ADBHID_CAPSLOCK */
++
+ 	up_flag = (keycode & 0x80);
+ 	keycode &= 0x7f;
+ 
+ 	switch (keycode) {
++#ifndef CONFIG_ADBHID_CAPSLOCK
+ 	case ADB_KEY_CAPSLOCK: /* Generate down/up events for CapsLock everytime. */
+ 		input_regs(&ahid->input, regs);
+ 		input_report_key(&ahid->input, KEY_CAPSLOCK, 1);
+ 		input_report_key(&ahid->input, KEY_CAPSLOCK, 0);
+ 		input_sync(&ahid->input);
+ 		return;
++#endif
+ #ifdef CONFIG_PPC_PMAC
+ 	case ADB_KEY_POWER_OLD: /* Power key on PBook 3400 needs remapping */
+ 		switch(pmac_call_feature(PMAC_FTR_GET_MB_INFO,
+diff -upr -X dontdiff linux-2.6.11.10/drivers/macintosh/Kconfig linux-2.6.11.10-caps/drivers/macintosh/Kconfig
+--- linux-2.6.11.10/drivers/macintosh/Kconfig	2005-05-16 11:50:32.000000000 -0600
++++ linux-2.6.11.10-caps/drivers/macintosh/Kconfig	2005-05-19 21:27:45.000000000 -0600
+@@ -147,6 +147,14 @@ config INPUT_ADBHID
+ 
+ 	  If unsure, say Y.
+ 
++config ADBHID_CAPSLOCK
++	bool "ADB keyboard caps lock hack"
++	depends on INPUT_ADBHID
++	help
++	  Say Y here to use a hack that makes it possible to remap your caps
++	  lock as control with programs like xmodmap. Machines with ADB
++	  keyboards include iBooks and PowerBooks.
++
+ config MAC_EMUMOUSEBTN
+ 	bool "Support for mouse button 2+3 emulation"
+ 	depends on INPUT_ADBHID
