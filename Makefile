@@ -9,6 +9,7 @@ dontdiff:
 
 capslock.patch-$(uname): dontdiff
 	-diff -upr -X dontdiff {linux-$(uname),$(MYSRC)}/drivers/macintosh/ > $@
+	rm -f dontdiff
 
 .PHONY: clean
 clean:
